@@ -115,11 +115,23 @@ router.get('/me', async (req, res) => {
     if (rows.length === 0) {
       return res.status(401).json({ message: 'Not logged in' });
     }
+    res.json({ user: { id: rows[0].id, fullName: rows[0].full_name, email: rows[0].email, profilePictureUrl: rows[0].profile_picture_url } });
 
-    res.json({ user: { id: rows[0].id, fullName: rows[0].full_name, email: rows[0].email } });
   } catch (err) {
     res.status(401).json({ message: 'Not logged in' });
   }
 });
+// PATCH /api/auth/pfp — update profile picture URL
+router.patch('/pfp', require('../middleware/auth').requireAuth, async (req, res) => {
+  try {
+    const { profilePictureUrl } = req.body;
+    if (!profilePictureUrl) return res.status(400).json({ message: 'profilePictureUrl is required' });
 
+    await pool.query('UPDATE users SET profile_picture_url = ? WHERE id = ?', [profilePictureUrl, req.user.id]);
+    res.json({ profilePictureUrl });
+  } catch (err) {
+    console.error('PFP update error:', err);
+    res.status(500).json({ message: 'Something went wrong.' });
+  }
+});
 module.exports = router;
